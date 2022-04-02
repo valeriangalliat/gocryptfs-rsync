@@ -1,0 +1,26 @@
+passfile: reading from file "gocryptfs-password"
+Decrypting master key
+Filesystem mounted and ready.
+sending incremental file list
+./
+a
+progress
+gocryptfs.conf
+progress
+gocryptfs.diriv
+progress
+deleting b/d
+skipping non-regular file "b/e"
+g/
+g/gocryptfs.diriv
+progress
+b/
+b/f
+progress
+b/c
+progress
+b/gocryptfs.diriv
+progress
+
+sent
+total size

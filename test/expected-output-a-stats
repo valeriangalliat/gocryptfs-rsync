@@ -1,0 +1,21 @@
+passfile: reading from file "gocryptfs-password"
+Decrypting master key
+Filesystem mounted and ready.
+skipping non-regular file "b/e"
+
+Number of files: 11 (reg: 7, dir: 3, special: 1)
+Number of created files: 7 (reg: 6, dir: 1)
+Number of deleted files: 1 (reg: 1)
+Number of regular files transferred: 7
+Total file size: 446 bytes
+Total transferred file size: 446 bytes
+Literal data: 446 bytes
+Matched data: 0 bytes
+File list size: 0
+File list generation time: 0.0 seconds
+File list transfer time: 0.0 seconds
+Total bytes sent: 1,243
+Total bytes received: 302
+
+sent
+total size

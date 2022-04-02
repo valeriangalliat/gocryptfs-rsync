@@ -1,0 +1,27 @@
+#!/bin/sh -e
+
+export PATH=$PWD/..:$PATH
+
+test_case() {
+    output=$1; shift
+    expected="expected-$output"
+
+    echo "testing $output with $@"
+
+    cp -a target test-target
+
+    gocryptfs-rsync source/ test-target/ --passfile gocryptfs-password -- "$@" --delete --no-specials \
+        | sed 's/^\r.*/\rprogress/' \
+        | sed 's/^sent .*/sent/' \
+        | sed 's/^total size.*/total size/' \
+        | sed 's/ [.,0-9]* seconds$/ 0.0 seconds/g' \
+        > "$output"
+
+    rm -rf test-target
+    diff "$expected" "$output"
+    rm "$output"
+}
+
+test_case output-av-progress -av --progress
+test_case output-ai-progress2 -ai --info=progress2
+test_case output-a-stats -a --stats
