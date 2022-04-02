@@ -1,0 +1,68 @@
+#!/bin/sh -e
+
+help() {
+    echo 'Usage: gocryptfs-rsync <src> <dest> [gocryptfs_options] -- [rsync_options]'
+}
+
+help_error() {
+    help >&2
+    exit 1
+}
+
+src=$1; shift || help_error
+dest=$1; shift || help_error
+gocryptfs_args=()
+
+# Append every option up to a `--` (or the end) to the `gocryptfs_args` list
+while [ $# -gt 0 ]; do
+    if [ "$1" == -- ]; then
+        shift
+        break
+    fi
+
+    gocryptfs_args+=("$1")
+    shift
+done
+
+# Infer a name from the source directory for readability
+name=$(basename "$(realpath "$src")")
+
+if [ "$name" = / ]; then
+    name=root
+fi
+
+encrypted_mount="/tmp/gocryptfs/$name/"
+ctlsock="/tmp/gocryptfs/$name.ctlsock"
+
+#
+# Could be because we failed to clean last run properly, because there's
+# already another gocryptfs-rsync in progress, or a conflict between
+# two different directories with the same name.
+#
+if [ -d "$encrypted_mount" ]; then
+    echo "$encrypted_mount already exists, aborting" >&2
+    exit 1
+fi
+
+# Always unmount gocryptfs and remove the temporary mount directory on exit
+on_exit() {
+    if command -v fusermount &> /dev/null; then
+        fusermount -u "$encrypted_mount"
+    else
+        umount "$encrypted_mount"
+    fi
+
+    rmdir "$encrypted_mount"
+}
+
+trap on_exit EXIT
+
+mkdir -p "$encrypted_mount"
+
+gocryptfs "${gocryptfs_args[@]}" --reverse --ctlsock "$ctlsock" "$src" "$encrypted_mount"
+
+rsync \
+    "$@" \
+    "$encrypted_mount" \
+    "$dest" \
+    | ./gocryptfs-rsync-pretty "$ctlsock"

@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+#
+# Usage: gocryptfs-rsync-pretty <ctlsock>
+#
+# Processes rsync verbose output from `stdin` and decrypts the paths to
+# display a readable log.
+#
+
+import sys
+import re
+import subprocess
+import json
+
+if len(sys.argv) < 2:
+    print('Usage: gocryptfs-rsync-pretty <ctlsock>', file=sys.stderr)
+    exit(1)
+
+ctlsock = sys.argv[1]
+
+xray = subprocess.Popen(['gocryptfs-xray', '--decrypt-paths', ctlsock], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
+for line in sys.stdin:
+    # Means we reach the end, only stats after
+    if line == '\n':
+        sys.stdout.write(line)
+        break
+
+    # Progress lines, ignore
+    if line.startswith('\r'):
+        sys.stdout.write(line)
+        continue
+
+    # Special case for base directory, ignore early (messes with parsing otherwise)
+    if line == './\n':
+        sys.stdout.write(line)
+        continue
+
+    if line == 'sending incremental file list\n':
+        sys.stdout.write(line)
+        continue
+
+    if line.startswith('<') or line.startswith('*') or line.startswith('.'):
+        # Info mode, file is the second part of the line
+        file = re.split(r'\s+', line)[1]
+    elif line.startswith('skipping non-regular file'):
+        # File is between quotes
+        file = line.split('"')[1]
+    elif line.startswith('deleting'):
+        # File is the second part of the line
+        file = re.split(r'\s+', line)[1]
+    else:
+        # Regular verbose mode, file is the whole line
+        file = line.rstrip()
+
+    # Top-level `gocryptfs.diriv`, ignore
+    if file == 'gocryptfs.diriv':
+        sys.stdout.write(line)
+        continue
+
+    path = file
+
+    if file.endswith('/'):
+        path = file.rstrip('/')
+    elif file.endswith('/gocryptfs.diriv'):
+        path = file[0:-len('/gocryptfs.diriv')]
+
+    # Special case for base directory (info mode)
+    if path == '.':
+        sys.stdout.write(line)
+        continue
+
+
+    xray.stdin.write(path + '\n')
+    xray.stdin.flush()
+
+    decrypted = xray.stdout.readline().rstrip()
+
+    if file.endswith('/'):
+        decrypted += '/'
+    elif file.endswith('/gocryptfs.diriv'):
+        decrypted += '/gocryptfs.diriv'
+
+    sys.stdout.write(line.replace(file, decrypted))
+
+# Print the rest as is
+for line in sys.stdin:
+    sys.stdout.write(line)
+
+xray.terminate()
