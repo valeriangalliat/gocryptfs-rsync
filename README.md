@@ -69,23 +69,19 @@ First you need to install [macFUSE](https://osxfuse.github.io/):
 brew install --cask macfuse
 ```
 
-Then you (currently) need to build my [fork][gocryptfs-fork] of
-[gocryptfs] against my other [fork][go-fuse-fork] of [go-fuse].
+Then you (currently) need to build [gocryptfs] against my
+[fork][go-fuse-fork] of [go-fuse].
 
-[go-fuse]: https://github.com/hanwen/go-fuse
-[gocryptfs-fork]: https://github.com/valeriangalliat/gocryptfs/tree/fix-reverse-conf-darwin
 [go-fuse-fork]: https://github.com/valeriangalliat/go-fuse/tree/poll-hack-read-only-darwin
+[go-fuse]: https://github.com/hanwen/go-fuse
 
 ```sh
 git clone https://github.com/valeriangalliat/go-fuse
 git -C go-fuse checkout poll-hack-read-only-darwin
 
-git clone https://github.com/valeriangalliat/gocryptfs
+git clone https://github.com/rfjakob/gocryptfs
 cd gocryptfs
-
-git checkout fix-reverse-conf-darwin
 go mod edit -replace github.com/hanwen/go-fuse/v2=../go-fuse
-
 ./build-without-openssl.bash
 ```
 
@@ -96,10 +92,9 @@ in your `PATH`, e.g. linking them in a local `bin`:
 ln -s "$PWD/gocryptfs" "$PWD/gocryptfs-xray/gocryptfs-xray" ~/bin
 ```
 
-**Note:** if those forks are not online anymore, it probably means that
-the [relevant](https://github.com/hanwen/go-fuse/pull/420)
-[PRs](https://github.com/rfjakob/gocryptfs/pull/648) were merged! Build
-from those project's main branch until it makes it to
+**Note:** if the fork is not online anymore, it probably means that the
+[relevant PR](https://github.com/hanwen/go-fuse/pull/420) was merged!
+Build from the project's main branch until it makes it to
 [`gromgit`'s homebrew-fuse](https://github.com/gromgit/homebrew-fuse)
 [formula](https://github.com/gromgit/homebrew-fuse/blob/main/Formula/gocryptfs-mac.rb)
 (the best place to get FUSE filesystems on macOS since they've been
