@@ -65,4 +65,4 @@ rsync \
     "$@" \
     "$encrypted_mount" \
     "$dest" \
-    | ./gocryptfs-rsync-pretty "$ctlsock"
+    | gocryptfs-rsync-pretty "$ctlsock"
