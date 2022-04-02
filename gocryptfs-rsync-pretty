@@ -39,7 +39,8 @@ for line in sys.stdin:
         sys.stdout.write(line)
         continue
 
-    if line.startswith('<') or line.startswith('*') or line.startswith('.'):
+    # See <http://www.staroceans.org/e-book/understanding-the-output-of-rsync-itemize-changes.html>
+    if line[0] in ['<', '>', '*', '.'] or (line[0] in ['c', 'h'] and line[3] in ['.', '+']):
         # Info mode, file is the second part of the line
         file = re.split(r'\s+', line)[1]
     elif line.startswith('skipping non-regular file'):
@@ -52,8 +53,8 @@ for line in sys.stdin:
         # Regular verbose mode, file is the whole line
         file = line.rstrip()
 
-    # Top-level `gocryptfs.diriv`, ignore
-    if file == 'gocryptfs.diriv':
+    # Top-level `gocryptfs.diriv` or `gocryptfs.conf`, ignore
+    if file == 'gocryptfs.diriv' or file == 'gocryptfs.conf':
         sys.stdout.write(line)
         continue
 
