@@ -11,11 +11,15 @@ import re
 import subprocess
 import json
 
-if len(sys.argv) < 2:
-    print('Usage: gocryptfs-rsync-pretty <ctlsock>', file=sys.stderr)
+if len(sys.argv) < 3:
+    print('Usage: gocryptfs-rsync-pretty <ctlsock> <encrypted-mount>', file=sys.stderr)
     exit(1)
 
 ctlsock = sys.argv[1]
+encrypted_mount = sys.argv[2]
+
+if not encrypted_mount.endswith('/'):
+    encrypted_mount += '/'
 
 xray = subprocess.Popen(['gocryptfs-xray', '--decrypt-paths', ctlsock], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
@@ -39,6 +43,10 @@ for line in sys.stdin:
         sys.stdout.write(line)
         continue
 
+    if line.startswith('IO error encountered'):
+        sys.stdout.write(line)
+        continue
+
     # See <http://www.staroceans.org/e-book/understanding-the-output-of-rsync-itemize-changes.html>
     if line[0] in ['<', '>', '*', '.'] or (line[0] in ['c', 'h'] and line[3] in ['.', '+']):
         # Info mode, file is the second part of the line
@@ -46,6 +54,15 @@ for line in sys.stdin:
     elif line.startswith('skipping non-regular file'):
         # File is between quotes
         file = line.split('"')[1]
+    elif line.startswith('rsync: [') and 'failed:' in line:
+        # File is between quotes and absolute from encrypted mount
+        file = line.split('"')[1]
+
+        if file.startswith(encrypted_mount):
+            file = file[len(encrypted_mount):]
+        else:
+            sys.stdout.write(line)
+            continue
     elif line.startswith('deleting'):
         # File is the second part of the line
         file = re.split(r'\s+', line)[1]

@@ -99,3 +99,19 @@ Build from the project's main branch until it makes it to
 [formula](https://github.com/gromgit/homebrew-fuse/blob/main/Formula/gocryptfs-mac.rb)
 (the best place to get FUSE filesystems on macOS since they've been
 dropped from Homebrew).
+
+## Files to ignore on macOS
+
+As a quick note, if you're backing up the root of a macOS volume, you'll
+want to ignore the following special directories:
+
+```
+/.DocumentRevisions-V100
+/.Spotlight-V100
+/.TemporaryItems
+/.Trashes
+/.fseventsd
+```
+
+Typically you would put this list in a `.rsyncignore` and pass it to
+`--exclude-from`.
