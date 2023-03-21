@@ -23,14 +23,29 @@ if not encrypted_mount.endswith('/'):
 
 xray = subprocess.Popen(['gocryptfs-xray', '--decrypt-paths', ctlsock], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
+#
+# Setting `newline` to empty string causes universal newline to be enabled,
+# but the original character to be returned.
+#
+# See <https://docs.python.org/3/library/io.html#io.TextIOWrapper>.
+#
+sys.stdin.reconfigure(newline='')
+
 for line in sys.stdin:
     # Means we reach the end, only stats after
     if line == '\n':
         sys.stdout.write(line)
         break
 
-    # Progress lines, ignore
-    if line.startswith('\r'):
+    #
+    # Progress lines, ignore.
+    #
+    # Typically it starts with a bunch of "\r", then each progress update
+    # ends with "\r", and the final progress update ends with "\n".
+    #
+    # Progress line always seem to start with a few spaces.
+    #
+    if line.startswith('\r') or line.endswith('\r') or line.startswith('    '):
         sys.stdout.write(line)
         continue
 
@@ -86,7 +101,6 @@ for line in sys.stdin:
     if path == '.':
         sys.stdout.write(line)
         continue
-
 
     xray.stdin.write(path + '\n')
     xray.stdin.flush()
