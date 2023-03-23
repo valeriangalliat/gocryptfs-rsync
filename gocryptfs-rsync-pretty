@@ -45,7 +45,7 @@ for line in sys.stdin:
     #
     # Progress line always seem to start with a few spaces.
     #
-    if line.startswith('\r') or line.endswith('\r') or line.startswith('    '):
+    if line.startswith('\r') or line.endswith('\r') or line.startswith(' '):
         sys.stdout.write(line)
         continue
 
