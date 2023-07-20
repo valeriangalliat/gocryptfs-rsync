@@ -40,12 +40,35 @@ for line in sys.stdin:
     #
     # Progress lines, ignore.
     #
-    # Typically it starts with a bunch of "\r", then each progress update
-    # ends with "\r", and the final progress update ends with "\n".
+    # Typically it starts with a line with just "\r", then each progress update
+    # ends with "\r", and the final progress update ends with "\n". E.g.:
     #
-    # Progress line always seem to start with a few spaces.
+    #     "\r"
+    #     "              0   0%    0.00kB/s    0:00:00 (xfr#0, ir-chk=1565/1577)\r"
+    #     "              0   0%    0.00kB/s    0:00:00 (xfr#0, ir-chk=1000/485789)\n"
+    #     ".d..t...... path/to/dir/\n"
+    #     "\r"
+    #     "              0   0%    0.00kB/s    0:00:00 (xfr#0, ir-chk=1160/485974)\n"
+    #     "<f+++++++++ path/to/file\n"
+    #     "\r"
+    #     "      7,241,728   0%  411.62kB/s  327:22:24  \r"
+    #     " 97,281,963,609  20%    2.15MB/s   11:57:46 (xfr#358224, ir-chk=1006/485789)\r"
+    #     "100,333,522,717  20%    2.16MB/s   12:19:56 (xfr#358245, ir-chk=1164/485974)\n"
+    #
+    # Progress line can get big enough that it doesn't start with a space
+    # anymore, so we can't rely on that.
     #
     if line.startswith('\r') or line.endswith('\r') or line.startswith(' '):
+        sys.stdout.write(line)
+        continue
+
+    # Another progress marker
+    if 'xfr#' in line or ', ir-chk=' in line or ', to-chk=' in line:
+        sys.stdout.write(line)
+        continue
+
+    # Last fallback for progress line long enough to not start with space
+    if re.match(r'^\d+(,\d+)* ', line):
         sys.stdout.write(line)
         continue
 
@@ -106,6 +129,11 @@ for line in sys.stdin:
     xray.stdin.flush()
 
     decrypted = xray.stdout.readline().rstrip()
+
+    if decrypted.startswith('error at input line'):
+        print(decrypted)
+        print('Debug:', json.dumps(line))
+        continue
 
     if file.endswith('/'):
         decrypted += '/'
